@@ -2,7 +2,7 @@
 
 > A free, fully offline interactive toolkit for Tier 1 SOC analysts — covering incident response, alert triage, threat hunting, and analyst onboarding. Zero dependencies. Single HTML file. Open in any browser.
 
-**[🚀 Live Demo →](https://cross-samuel1.github.io/soc-analyst-hub/)**
+**[🚀 Live Demo →](https://cross-samuel1.github.io/soc-analyst-hub/index.html)**
 
 ---
 
