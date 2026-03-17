@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Analyst Hub — Tier 1</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a0f;
+    --surface: #0c1219;
+    --surface2: #111a24;
+    --border: #1a2d3d;
+    --border-bright: #1e3a4f;
+    --green: #00e676;
+    --green-dim: #00c853;
+    --green-dark: #0a2e1a;
+    --amber: #ffab00;
+    --amber-dim: #ff8f00;
+    --red: #ff1744;
+    --red-dim: #b71c1c;
+    --cyan: #00e5ff;
+    --cyan-dim: #0097a7;
+    --text: #c8d8e8;
+    --text-dim: #6a8fa8;
+    --text-muted: #3a5060;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* grid bg */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,230,118,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,230,118,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(6,10,15,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 56px;
+  }
+
+  .logo {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--green);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .logo span { color: var(--text-dim); }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .tier-badge {
+    background: rgba(255,171,0,0.1);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 2px 8px;
+  }
+
+  /* NAV TABS */
+  nav {
+    position: sticky;
+    top: 56px;
+    z-index: 90;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 24px;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 14px 20px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+  .tab-btn .tab-icon { font-size: 14px; }
+  .tab-count {
+    background: rgba(0,230,118,0.1);
+    color: var(--green);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  /* MAIN CONTENT */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeUp 0.3s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SECTION HEADER */
+  .section-header {
+    margin-bottom: 28px;
+  }
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .section-desc {
+    font-size: 16px;
+    color: var(--text-dim);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* GRID LAYOUT */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--green);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover { border-color: var(--border-bright); background: var(--surface2); }
+  .card:hover::before { opacity: 1; }
+
+  .card.severity-critical::before { background: var(--red); opacity: 1; }
+  .card.severity-high::before { background: var(--amber); opacity: 1; }
+  .card.severity-medium::before { background: var(--cyan); opacity: 1; }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+    line-height: 1.3;
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 7px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .badge-critical { color: var(--red); border-color: var(--red); background: rgba(255,23,68,0.08); }
+  .badge-high     { color: var(--amber); border-color: var(--amber); background: rgba(255,171,0,0.08); }
+  .badge-medium   { color: var(--cyan); border-color: var(--cyan); background: rgba(0,229,255,0.08); }
+  .badge-low      { color: var(--text-dim); border-color: var(--border-bright); }
+  .badge-info     { color: var(--green); border-color: var(--green); background: rgba(0,230,118,0.08); }
+
+  /* CHECKLIST */
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(26,45,61,0.6);
+    cursor: pointer;
+    user-select: none;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-item:hover .check-label { color: var(--text); }
+
+  .check-box {
+    width: 16px; height: 16px;
+    border: 1px solid var(--border-bright);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .check-item.done .check-box {
+    background: var(--green);
+    border-color: var(--green);
+    color: #000;
+  }
+  .check-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    transition: color 0.15s;
+  }
+  .check-item.done .check-label {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--text-muted);
+  }
+
+  .progress-bar-wrap {
+    margin-top: 14px;
+    background: rgba(0,0,0,0.4);
+    height: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px var(--green);
+  }
+  .progress-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* PLAYBOOK STEPS */
+  .playbook-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .playbook-steps::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 20px;
+    bottom: 20px;
+    width: 1px;
+    background: var(--border);
+  }
+  .step {
+    display: flex;
+    gap: 16px;
+    padding: 6px 0;
+    position: relative;
+    cursor: pointer;
+  }
+  .step-num {
+    width: 20px; height: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 1;
+    transition: all 0.2s;
+  }
+  .step.done .step-num {
+    background: var(--green);
+    border-color: var(--green);
+    color: #000;
+  }
+  .step-content { flex: 1; }
+  .step-action {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    padding-top: 2px;
+    transition: color 0.15s;
+  }
+  .step.done .step-action { color: var(--text-muted); text-decoration: line-through; }
+  .step:hover .step-action { color: var(--text); }
+  .step-cmd {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--green);
+    background: rgba(0,230,118,0.06);
+    border: 1px solid rgba(0,230,118,0.15);
+    padding: 4px 8px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+
+  /* DECISION TREE */
+  .decision-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .decision-node {
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+    padding: 10px 14px;
+  }
+  .decision-node.q {
+    border-color: var(--cyan-dim);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .decision-node.yes {
+    border-left: 3px solid var(--green);
+    margin-left: 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .decision-node.no {
+    border-left: 3px solid var(--red);
+    margin-left: 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .decision-node .yn-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-right: 8px;
+  }
+  .yes .yn-label { color: var(--green); }
+  .no  .yn-label { color: var(--red); }
+
+  /* HUNT CARD */
+  .hunt-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .hunt-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    letter-spacing: 1px;
+  }
+  .hypothesis {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--amber);
+    border-left: 2px solid var(--amber);
+    padding: 6px 10px;
+    background: rgba(255,171,0,0.05);
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+  .query-block {
+    background: #020608;
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    margin-top: 8px;
+  }
+  .query-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .query-code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--green);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* TRAINING MODULE */
+  .module-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    transition: all 0.2s;
+  }
+  .module-card:hover { border-color: var(--border-bright); }
+
+  .module-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+  .module-icon {
+    width: 40px; height: 40px;
+    background: rgba(0,230,118,0.08);
+    border: 1px solid rgba(0,230,118,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .module-meta { flex: 1; }
+  .module-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .module-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .module-expand {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+  }
+  .module-card.open .module-expand { transform: rotate(90deg); }
+
+  .module-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .module-card.open .module-body { display: block; }
+
+  .lesson {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(26,45,61,0.4);
+    cursor: pointer;
+  }
+  .lesson:last-child { border-bottom: none; }
+  .lesson-num {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    width: 24px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+  .lesson-text {
+    flex: 1;
+  }
+  .lesson-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    line-height: 1.4;
+    transition: color 0.15s;
+  }
+  .lesson:hover .lesson-title { color: var(--text); }
+  .lesson.done .lesson-title { color: var(--text-muted); }
+  .lesson-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .lesson-status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .lesson.done .lesson-status { color: var(--green); }
+
+  /* OVERALL PROGRESS */
+  .progress-widget {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 20px;
+  }
+  .prog-stat { text-align: center; }
+  .prog-num {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    color: var(--green);
+    line-height: 1;
+    display: block;
+  }
+  .prog-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* EXPAND TOGGLE */
+  .expand-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 12px;
+    text-transform: uppercase;
+  }
+  .expand-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* RESET BTN */
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .card-grid { grid-template-columns: 1fr; }
+    .progress-widget { grid-template-columns: 1fr 1fr; }
+    .status-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SOC<span>//</span>HUB</div>
+  <span class="tier-badge">TIER 1</span>
+  <div class="status-bar">
+    <div class="status-pill"><span class="dot"></span>LIVE</div>
+    <span id="clock" style="color:var(--text-dim);font-family:var(--font-mono);font-size:11px"></span>
+  </div>
+</header>
+
+<nav>
+  <button class="tab-btn active" onclick="showTab('ir','this')" data-tab="ir">
+    <span class="tab-icon">⚡</span> IR Checklists <span class="tab-count" id="ir-count">0</span>
+  </button>
+  <button class="tab-btn" onclick="showTab('triage','this')" data-tab="triage">
+    <span class="tab-icon">🔍</span> Alert Triage <span class="tab-count" id="triage-count">6</span>
+  </button>
+  <button class="tab-btn" onclick="showTab('hunt','this')" data-tab="hunt">
+    <span class="tab-icon">🎯</span> Threat Hunting <span class="tab-count" id="hunt-count">5</span>
+  </button>
+  <button class="tab-btn" onclick="showTab('training','this')" data-tab="training">
+    <span class="tab-icon">📡</span> Onboarding <span class="tab-count" id="training-count">0%</span>
+  </button>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════ IR CHECKLISTS -->
+<div id="tab-ir" class="tab-panel active">
+  <div class="section-header">
+    <div class="section-title">// MODULE 01 — INCIDENT RESPONSE</div>
+    <div class="section-desc">Step-by-step checklists for common incident types. Check off steps as you work.</div>
+  </div>
+
+  <div class="progress-widget" id="ir-progress-widget">
+    <div class="prog-stat"><span class="prog-num" id="ir-total-done">0</span><span class="prog-label">Steps Done</span></div>
+    <div class="prog-stat"><span class="prog-num" id="ir-incidents">5</span><span class="prog-label">Playbooks</span></div>
+    <div class="prog-stat"><span class="prog-num" id="ir-pct">0%</span><span class="prog-label">Complete</span></div>
+    <div class="prog-stat"><span class="prog-num" id="ir-total-steps">—</span><span class="prog-label">Total Steps</span></div>
+  </div>
+
+  <div class="card-grid" id="ir-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ ALERT TRIAGE -->
+<div id="tab-triage" class="tab-panel">
+  <div class="section-header">
+    <div class="section-title">// MODULE 02 — ALERT TRIAGE PLAYBOOKS</div>
+    <div class="section-desc">Decision flows for assessing, classifying, and escalating alerts. Follow the tree, log your findings.</div>
+  </div>
+  <div class="card-grid" id="triage-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ THREAT HUNTING -->
+<div id="tab-hunt" class="tab-panel">
+  <div class="section-header">
+    <div class="section-title">// MODULE 03 — THREAT HUNTING</div>
+    <div class="section-desc">Structured hunting hypotheses with data sources, queries, and pivot points for Tier 1 analysts.</div>
+  </div>
+  <div class="card-grid" id="hunt-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ TRAINING -->
+<div id="tab-training" class="tab-panel">
+  <div class="section-header">
+    <div class="section-title">// MODULE 04 — ANALYST ONBOARDING</div>
+    <div class="section-desc">Structured learning path for Tier 1 analysts. Complete modules in order for best results.</div>
+  </div>
+  <div class="progress-widget">
+    <div class="prog-stat"><span class="prog-num" id="train-done">0</span><span class="prog-label">Topics Done</span></div>
+    <div class="prog-stat"><span class="prog-num" id="train-total">0</span><span class="prog-label">Total Topics</span></div>
+    <div class="prog-stat"><span class="prog-num" id="train-pct">0%</span><span class="prog-label">Progress</span></div>
+    <div class="prog-stat"><span class="prog-num" id="train-week">~4</span><span class="prog-label">Est. Weeks</span></div>
+  </div>
+  <div id="training-grid" style="display:flex;flex-direction:column;gap:12px"></div>
+</div>
+
+</main>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const IR_CHECKLISTS = [
+  {
+    title: "Phishing Email Investigation",
+    severity: "high",
+    steps: [
+      "Quarantine the reported email in the mail gateway",
+      "Extract full email headers (Received, Reply-To, Return-Path)",
+      "Check sender domain/IP against threat intel (VirusTotal, MXToolbox)",
+      "Identify all recipients — check if others opened or clicked",
+      "Extract and detonate any links in a sandbox (URLScan, Any.run)",
+      "Extract attachments — scan in sandbox (Hybrid Analysis)",
+      "Search SIEM for additional emails from same sender/subject",
+      "Block sender domain/IP in email gateway and firewall",
+      "Notify affected users; ask them to NOT interact with email",
+      "Check endpoint logs for credential submission or download activity",
+      "Document findings and escalate to Tier 2 if compromise suspected",
+      "Close or escalate ticket with full IOC list"
+    ]
+  },
+  {
+    title: "Malware / Endpoint Compromise",
+    severity: "critical",
+    steps: [
+      "Identify affected host(s) from alert source",
+      "Isolate host from network (EDR isolation or VLAN quarantine)",
+      "Preserve volatile memory if tooling allows (FTK Imager, WinPmem)",
+      "Collect running processes, network connections, scheduled tasks",
+      "Check parent-child process tree for suspicious spawning",
+      "Hash suspicious files — query VirusTotal, MalwareBazaar",
+      "Review persistence mechanisms: registry Run keys, services, cron",
+      "Collect relevant logs: Security, Sysmon, EDR telemetry",
+      "Identify C2 domains/IPs — block at firewall and DNS",
+      "Search SIEM for lateral movement from compromised host",
+      "Determine initial infection vector",
+      "Escalate to Tier 2/IR team for full forensic investigation"
+    ]
+  },
+  {
+    title: "Brute Force / Credential Attack",
+    severity: "high",
+    steps: [
+      "Identify targeted account(s) and source IP(s) from logs",
+      "Check SIEM for login failure volume — confirm brute force pattern",
+      "Determine if any logins succeeded from attacking IP",
+      "Check geolocation of source IP — expected or anomalous?",
+      "Look up source IP in threat intel (AbuseIPDB, Shodan)",
+      "Block source IP at perimeter firewall (temporary block + watchlist)",
+      "If success detected: disable compromised account immediately",
+      "Force password reset on targeted accounts",
+      "Notify account owner(s) of activity",
+      "Check for MFA bypass or token theft in auth logs",
+      "Verify no persistence was established if login succeeded",
+      "Review cloud auth logs if SaaS/cloud accounts targeted"
+    ]
+  },
+  {
+    title: "Data Exfiltration Alert",
+    severity: "critical",
+    steps: [
+      "Identify source host, user, and destination from alert",
+      "Determine data volume and transfer protocol (HTTP, FTP, DNS, etc.)",
+      "Check if destination IP/domain is known-bad (threat intel)",
+      "Review DLP alert details — what data classification was triggered?",
+      "Isolate host if active exfiltration is ongoing",
+      "Pull endpoint process list — identify what process initiated transfer",
+      "Check for staging activity: archive tools, large file operations",
+      "Review user activity leading up to the exfiltration event",
+      "Notify Legal/Compliance if PII/sensitive data involved",
+      "Block destination C2/upload endpoints at firewall",
+      "Search SIEM for similar behavior from other hosts",
+      "Escalate immediately to Tier 2 and CISO for data breach assessment"
+    ]
+  },
+  {
+    title: "Suspicious PowerShell Activity",
+    severity: "medium",
+    steps: [
+      "Identify host, user, and full PowerShell command line",
+      "Check for encoded commands: Base64 decode if present",
+      "Identify script block content from PowerShell event logs (EID 4104)",
+      "Look for download cradles: IEX, Invoke-Expression, Net.WebClient",
+      "Check parent process — was PS launched by Office, browser, or script?",
+      "Review child processes spawned by PowerShell",
+      "Look for AMSI bypass techniques or -ExecutionPolicy Bypass flags",
+      "Search for network connections made during PS execution",
+      "Scan any downloaded files through sandbox/AV",
+      "Correlate with other alerts on same host/user",
+      "Determine if this is scheduled task, WMI subscription, or manual",
+      "Escalate if obfuscation or download cradle confirmed"
+    ]
+  }
+];
+
+const TRIAGE_PLAYBOOKS = [
+  {
+    title: "High-Volume Failed Logins",
+    severity: "high",
+    nodes: [
+      { type: "q", text: "Is the source IP internal or external?" },
+      { type: "yes", label: "EXTERNAL", text: "→ Likely internet-facing brute force. Check AbuseIPDB. Block IP if score >50. Escalate if any success." },
+      { type: "no",  label: "INTERNAL", text: "→ Possible infected host or disgruntled insider. Isolate host. Check AV alerts. Notify manager." },
+      { type: "q", text: "Did any login attempt SUCCEED?" },
+      { type: "yes", label: "YES", text: "→ P1 ESCALATE NOW. Disable account. Trigger IR checklist: Brute Force. Notify Tier 2." },
+      { type: "no",  label: "NO",  text: "→ P3. Block source. Monitor for continued attempts. Log ticket and close with IOC." },
+    ]
+  },
+  {
+    title: "Impossible Travel Alert",
+    severity: "high",
+    nodes: [
+      { type: "q", text: "Is the user currently on leave or known to travel?" },
+      { type: "yes", label: "YES", text: "→ Verify via HR or direct contact. If confirmed traveler, document & close as FP." },
+      { type: "no",  label: "NO",  text: "→ Contact user immediately via out-of-band (phone/Slack). Do NOT use email." },
+      { type: "q", text: "Did the user confirm the login?" },
+      { type: "yes", label: "YES", text: "→ Document VPN/proxy usage. Close as FP with note. Consider policy exception." },
+      { type: "no",  label: "NO",  text: "→ P1. Disable account NOW. Revoke all sessions/tokens. Start Account Takeover IR." },
+    ]
+  },
+  {
+    title: "Suspicious Process Execution",
+    severity: "critical",
+    nodes: [
+      { type: "q", text: "Is the process a known admin tool (PsExec, cmd, wscript)?" },
+      { type: "yes", label: "YES", text: "→ Check parent process and user. Admin activity? Document and query frequency baseline." },
+      { type: "no",  label: "NO",  text: "→ Unknown binary. Hash it. Query VirusTotal and internal threat intel." },
+      { type: "q", text: "Does the process hash exist in VirusTotal?" },
+      { type: "yes", label: "MALICIOUS", text: "→ ESCALATE P1. Isolate host. Start Malware IR checklist. Notify Tier 2." },
+      { type: "no",  label: "CLEAN/UNKNOWN", text: "→ Still suspicious if path is unusual. Submit to sandbox. Correlate with other alerts." },
+    ]
+  },
+  {
+    title: "DNS Beaconing Alert",
+    severity: "medium",
+    nodes: [
+      { type: "q", text: "Is the queried domain in a threat intel feed?" },
+      { type: "yes", label: "YES", text: "→ Confirmed C2/malicious domain. Identify source host. Isolate and escalate to Tier 2." },
+      { type: "no",  label: "NO",  text: "→ Analyze query pattern: regularity, subdomain entropy, query volume." },
+      { type: "q", text: "Are subdomains high-entropy (random-looking strings)?" },
+      { type: "yes", label: "YES", text: "→ Likely DNS tunneling. Isolate host. Capture pcap. Escalate with full DNS log." },
+      { type: "no",  label: "NO",  text: "→ Could be legitimate CDN/telemetry. Whitelist if verified. Monitor for 48h." },
+    ]
+  },
+  {
+    title: "Lateral Movement Detected",
+    severity: "critical",
+    nodes: [
+      { type: "q", text: "Was movement via SMB, WMI, PsExec, or RDP?" },
+      { type: "yes", label: "YES", text: "→ Identify source and all target hosts. These are common living-off-the-land techniques." },
+      { type: "no",  label: "NO",  text: "→ Document the protocol used. Check if service accounts are being abused." },
+      { type: "q", text: "Was a privileged account (admin/service account) used?" },
+      { type: "yes", label: "YES", text: "→ P1 ESCALATE. Disable account. Check for DCSync, pass-the-hash, or kerberoasting." },
+      { type: "no",  label: "NO",  text: "→ Isolate affected hosts. Check for credential dumping (lsass access, NTDS). Escalate P2." },
+    ]
+  },
+  {
+    title: "Cloud Storage Data Exposure",
+    severity: "medium",
+    nodes: [
+      { type: "q", text: "Is the S3/GCS/Azure Blob bucket set to public?" },
+      { type: "yes", label: "YES", text: "→ Immediately revoke public access. Notify data owner and Cloud team. Check CASB logs for access history." },
+      { type: "no",  label: "NO",  text: "→ Check for misconfigured IAM policy or third-party app with overly broad permissions." },
+      { type: "q", text: "Was any PII or sensitive data accessible?" },
+      { type: "yes", label: "YES", text: "→ ESCALATE to Legal/Compliance. Possible breach notification required. Document scope." },
+      { type: "no",  label: "NO",  text: "→ Document and remediate misconfiguration. Update IaC templates to prevent recurrence." },
+    ]
+  },
+];
+
+const THREAT_HUNTS = [
+  {
+    title: "LOLBAS Command Execution",
+    severity: "high",
+    tags: ["Endpoint", "Windows", "Defense Evasion"],
+    hypothesis: "Adversaries may be using Living-off-the-Land binaries (LOLBAS) to execute malicious code while blending in with normal admin activity.",
+    datasource: "Sysmon Event ID 1, Windows Security 4688, EDR process telemetry",
+    queries: [
+      { label: "Splunk — Suspicious LOLBAS", code: `index=sysmon EventCode=1\n| where match(Image, "mshta|regsvr32|certutil|wmic|msiexec")\n| stats count by Image, CommandLine, ParentImage, host\n| where count < 3` }
+    ]
+  },
+  {
+    title: "Scheduled Task Persistence",
+    severity: "high",
+    tags: ["Endpoint", "Persistence", "TA0003"],
+    hypothesis: "Attackers commonly create scheduled tasks to maintain persistence after initial compromise. Look for tasks created by non-admin users or from unusual paths.",
+    datasource: "Windows Event ID 4698, Sysmon EID 1 (schtasks.exe)",
+    queries: [
+      { label: "Elastic — New Scheduled Task", code: `event.code: 4698 AND NOT user.name: (SYSTEM OR Administrator)\n| keep host.name, winlog.event_data.TaskName, user.name` }
+    ]
+  },
+  {
+    title: "Kerberoasting Attempts",
+    severity: "critical",
+    tags: ["Active Directory", "Credential Access", "T1558.003"],
+    hypothesis: "Kerberoasting targets service accounts with SPNs to extract and crack Kerberos TGS tickets offline. Large volume of TGS-REQ events from a single host is a key indicator.",
+    datasource: "Windows Security Event ID 4769 (Kerberos Service Ticket Request)",
+    queries: [
+      { label: "Splunk — TGS Spike", code: `index=wineventlog EventCode=4769 TicketEncryptionType=0x17\n| stats count by src_ip, Account_Name\n| where count > 20\n| sort -count` }
+    ]
+  },
+  {
+    title: "Outbound Connections on Non-Standard Ports",
+    severity: "medium",
+    tags: ["Network", "C2 Detection", "T1571"],
+    hypothesis: "C2 frameworks often communicate over non-standard ports to evade port-based filtering. High-entropy destination domains on unusual ports signal potential beaconing.",
+    datasource: "Firewall/proxy logs, Zeek conn.log, NetFlow",
+    queries: [
+      { label: "Elastic — Unusual Ports", code: `destination.port: (4444 OR 8888 OR 1337 OR 9999 OR 31337 OR 4545)\nAND NOT source.ip: (10.0.0.0/8 OR 172.16.0.0/12)\n| keep source.ip, destination.ip, destination.port, network.bytes` }
+    ]
+  },
+  {
+    title: "Pass-the-Hash Detection",
+    severity: "critical",
+    tags: ["Active Directory", "Lateral Movement", "T1550.002"],
+    hypothesis: "Pass-the-Hash uses stolen NTLM hashes to authenticate without plaintext passwords. Look for NTLM logins from accounts that typically use Kerberos, especially from workstations.",
+    datasource: "Windows Security Event 4624 (Logon Type 3 with NTLM), SIEM correlation",
+    queries: [
+      { label: "Splunk — NTLM Lateral Auth", code: `index=wineventlog EventCode=4624 Logon_Type=3\n  AuthenticationPackageName=NTLM\n| where NOT like(Account_Name, "%$")\n| stats dc(dest) as target_count by Account_Name, src_ip\n| where target_count > 3` }
+    ]
+  },
+];
+
+const TRAINING_MODULES = [
+  {
+    icon: "🖥️",
+    title: "SOC Fundamentals",
+    sub: "WEEK 1 — FOUNDATIONS",
+    lessons: [
+      { title: "What is a SOC? Roles, Tiers, and Mission", desc: "Understand the SOC structure: Tier 1 triage → Tier 2 IR → Tier 3 threat intel/hunt." },
+      { title: "SOC Toolchain Overview", desc: "SIEM, EDR, SOAR, ticketing systems — what they do and how they connect." },
+      { title: "The Cyber Kill Chain & MITRE ATT&CK Framework", desc: "Map adversary TTPs to detection opportunities." },
+      { title: "Log Sources 101: What Gets Ingested and Why", desc: "Endpoint, network, auth, DNS, proxy — understanding your data lake." },
+      { title: "Anatomy of an Alert: From Rule to Ticket", desc: "How detections fire, generate alerts, and land in your queue." },
+    ]
+  },
+  {
+    icon: "📋",
+    title: "Alert Handling & Triage",
+    sub: "WEEK 2 — CORE WORKFLOW",
+    lessons: [
+      { title: "P1–P4 Severity Classification", desc: "How to quickly assess impact, urgency, and escalation thresholds." },
+      { title: "True Positive vs False Positive Analysis", desc: "Techniques for reducing noise and identifying genuine threats." },
+      { title: "Documenting Findings in a Ticket", desc: "Structured ticket writing: timeline, IOCs, actions taken, disposition." },
+      { title: "Escalation Etiquette: When and How to Escalate", desc: "What to hand off, what to include, and how to communicate urgency." },
+      { title: "Working a Shift: Queue Management Best Practices", desc: "SLA management, parallel workstreams, shift handoff notes." },
+    ]
+  },
+  {
+    icon: "🔬",
+    title: "Investigation Skills",
+    sub: "WEEK 3 — ANALYSIS",
+    lessons: [
+      { title: "SIEM Query Basics (Splunk/Elastic)", desc: "Writing effective searches: field extractions, boolean logic, time ranges." },
+      { title: "Reading Process Trees and Parent-Child Relationships", desc: "Identify suspicious spawning patterns in Sysmon and EDR data." },
+      { title: "Email Header Analysis", desc: "SPF/DKIM/DMARC, trace routing hops, identify spoofing attempts." },
+      { title: "Network Traffic Analysis Basics", desc: "Reading Zeek/firewall logs for beaconing, exfil, and lateral movement." },
+      { title: "Using Threat Intel: VirusTotal, OSINT Tools", desc: "Pivot from IOC to context: hash lookup, IP reputation, domain history." },
+    ]
+  },
+  {
+    icon: "🚨",
+    title: "Incident Response Basics",
+    sub: "WEEK 4 — IR FUNDAMENTALS",
+    lessons: [
+      { title: "The IR Lifecycle: Prepare → Identify → Contain → Eradicate → Recover", desc: "NIST SP 800-61 framework overview for Tier 1 role in IR." },
+      { title: "Evidence Collection and Chain of Custody", desc: "What to collect, when to collect it, and how to preserve it." },
+      { title: "Isolating Hosts in EDR (CrowdStrike/Defender/SentinelOne)", desc: "Hands-on: network isolation, triage scripts, artifact collection." },
+      { title: "Communicating During an Incident", desc: "Stakeholder updates, incident bridges, status reports, runbooks." },
+      { title: "Post-Incident Review: Writing Lessons Learned", desc: "Template-driven post-mortems that actually improve detection." },
+    ]
+  },
+];
+
+// ─── RENDER FUNCTIONS ─────────────────────────────────────────────────────────
+
+function renderIR() {
+  const grid = document.getElementById('ir-grid');
+  grid.innerHTML = '';
+  let totalSteps = 0;
+
+  IR_CHECKLISTS.forEach((incident, idx) => {
+    totalSteps += incident.steps.length;
+    const card = document.createElement('div');
+    card.className = `card severity-${incident.severity}`;
+    card.id = `ir-card-${idx}`;
+
+    const stepsHTML = incident.steps.map((step, si) => {
+      const key = `ir-${idx}-${si}`;
+      const done = localStorage.getItem(key) === '1';
+      return `<div class="check-item ${done ? 'done' : ''}" onclick="toggleCheck('ir', ${idx}, ${si}, this)">
+        <div class="check-box">${done ? '✓' : ''}</div>
+        <div class="check-label">${step}</div>
+      </div>`;
+    }).join('');
+
+    const doneCount = incident.steps.filter((_, si) => localStorage.getItem(`ir-${idx}-${si}`) === '1').length;
+    const pct = Math.round((doneCount / incident.steps.length) * 100);
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title">${incident.title}</div>
+        <span class="badge badge-${incident.severity}">${incident.severity.toUpperCase()}</span>
+      </div>
+      <div class="checklist">${stepsHTML}</div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="ir-bar-${idx}" style="width:${pct}%"></div></div>
+      <div class="progress-label"><span>${doneCount}/${incident.steps.length} steps</span><span>${pct}%</span></div>
+      <button class="reset-btn" onclick="resetChecklist('ir', ${idx}, ${incident.steps.length})" style="margin-top:8px">↺ Reset</button>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('ir-total-steps').textContent = totalSteps;
+  updateIRStats();
+}
+
+function toggleCheck(type, idx, si, el) {
+  const key = `${type}-${idx}-${si}`;
+  const isDone = el.classList.contains('done');
+  if (isDone) {
+    localStorage.removeItem(key);
+    el.classList.remove('done');
+    el.querySelector('.check-box').textContent = '';
+  } else {
+    localStorage.setItem(key, '1');
+    el.classList.add('done');
+    el.querySelector('.check-box').textContent = '✓';
+  }
+  if (type === 'ir') updateIRStats();
+}
+
+function resetChecklist(type, idx, count) {
+  for (let i = 0; i < count; i++) localStorage.removeItem(`${type}-${idx}-${i}`);
+  renderIR();
+}
+
+function updateIRStats() {
+  let total = 0, done = 0;
+  IR_CHECKLISTS.forEach((inc, idx) => {
+    inc.steps.forEach((_, si) => {
+      total++;
+      if (localStorage.getItem(`ir-${idx}-${si}`) === '1') done++;
+    });
+    const incDone = inc.steps.filter((_, si) => localStorage.getItem(`ir-${idx}-${si}`) === '1').length;
+    const pct = Math.round((incDone / inc.steps.length) * 100);
+    const bar = document.getElementById(`ir-bar-${idx}`);
+    if (bar) bar.style.width = pct + '%';
+  });
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('ir-total-done').textContent = done;
+  document.getElementById('ir-pct').textContent = pct + '%';
+  document.getElementById('ir-count').textContent = done;
+}
+
+function renderTriage() {
+  const grid = document.getElementById('triage-grid');
+  grid.innerHTML = '';
+  TRIAGE_PLAYBOOKS.forEach(pb => {
+    const card = document.createElement('div');
+    card.className = `card severity-${pb.severity}`;
+    const nodesHTML = pb.nodes.map(n => {
+      if (n.type === 'q') return `<div class="decision-node q">? ${n.text}</div>`;
+      return `<div class="decision-node ${n.type}"><span class="yn-label">${n.label}</span>${n.text}</div>`;
+    }).join('');
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title">${pb.title}</div>
+        <span class="badge badge-${pb.severity}">${pb.severity.toUpperCase()}</span>
+      </div>
+      <div class="decision-tree">${nodesHTML}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderHunt() {
+  const grid = document.getElementById('hunt-grid');
+  grid.innerHTML = '';
+  THREAT_HUNTS.forEach(hunt => {
+    const card = document.createElement('div');
+    card.className = `card severity-${hunt.severity}`;
+    const tagsHTML = hunt.tags.map(t => `<span class="hunt-tag">${t}</span>`).join('');
+    const queriesHTML = hunt.queries.map(q => `
+      <div class="query-block">
+        <div class="query-label">${q.label}</div>
+        <pre class="query-code">${q.code}</pre>
+      </div>`).join('');
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title">${hunt.title}</div>
+        <span class="badge badge-${hunt.severity}">${hunt.severity.toUpperCase()}</span>
+      </div>
+      <div class="hunt-meta">${tagsHTML}</div>
+      <div class="hypothesis">${hunt.hypothesis}</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-bottom:6px">DATA SOURCE: ${hunt.datasource}</div>
+      ${queriesHTML}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderTraining() {
+  const grid = document.getElementById('training-grid');
+  grid.innerHTML = '';
+  let totalLessons = 0;
+  TRAINING_MODULES.forEach((mod, mi) => {
+    totalLessons += mod.lessons.length;
+    const card = document.createElement('div');
+    card.className = 'module-card';
+    card.id = `mod-${mi}`;
+
+    const lessonsHTML = mod.lessons.map((lesson, li) => {
+      const key = `train-${mi}-${li}`;
+      const done = localStorage.getItem(key) === '1';
+      return `<div class="lesson ${done ? 'done' : ''}" onclick="toggleLesson(${mi}, ${li}, this)">
+        <span class="lesson-num">L${String(li+1).padStart(2,'0')}</span>
+        <div class="lesson-text">
+          <div class="lesson-title">${lesson.title}</div>
+          <div class="lesson-desc">${lesson.desc}</div>
+        </div>
+        <span class="lesson-status">${done ? '✓' : '○'}</span>
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="module-header" onclick="toggleModule(${mi})">
+        <div class="module-icon">${mod.icon}</div>
+        <div class="module-meta">
+          <div class="module-title">${mod.title}</div>
+          <div class="module-sub">${mod.sub}</div>
+        </div>
+        <span class="module-expand">▶</span>
+      </div>
+      <div class="module-body">${lessonsHTML}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('train-total').textContent = totalLessons;
+  updateTrainingStats();
+}
+
+function toggleModule(mi) {
+  const card = document.getElementById(`mod-${mi}`);
+  card.classList.toggle('open');
+}
+
+function toggleLesson(mi, li, el) {
+  const key = `train-${mi}-${li}`;
+  const done = el.classList.contains('done');
+  if (done) {
+    localStorage.removeItem(key);
+    el.classList.remove('done');
+    el.querySelector('.lesson-status').textContent = '○';
+  } else {
+    localStorage.setItem(key, '1');
+    el.classList.add('done');
+    el.querySelector('.lesson-status').textContent = '✓';
+  }
+  updateTrainingStats();
+}
+
+function updateTrainingStats() {
+  let done = 0, total = 0;
+  TRAINING_MODULES.forEach((mod, mi) => {
+    mod.lessons.forEach((_, li) => {
+      total++;
+      if (localStorage.getItem(`train-${mi}-${li}`) === '1') done++;
+    });
+  });
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('train-done').textContent = done;
+  document.getElementById('train-total').textContent = total;
+  document.getElementById('train-pct').textContent = pct + '%';
+  document.getElementById('training-count').textContent = pct + '%';
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────────
+
+function showTab(tab, btnEl) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+}
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toUTCString().replace('GMT', 'UTC').slice(5, 25);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderIR();
+renderTriage();
+renderHunt();
+renderTraining();
+</script>
+</body>
+</html>
